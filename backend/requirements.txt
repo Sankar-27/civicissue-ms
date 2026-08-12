@@ -1,0 +1,12 @@
+# backend/requirements.txt
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+psycopg2-binary
+pydantic
+python-dotenv
+python-multipart
+pyjwt
+bcrypt
+aiosqlite
