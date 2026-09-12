@@ -1,20 +1,20 @@
 node_modules/
-/dist/
+dist/
 .env
 .DS_Store
-/.pnp
+.pnp
 .pnp.js
 npm-debug.log
 yarn-debug.log
 yarn-error.log
 *.log
 
-# Python / backend
-__pycache__/
-*.pyc
-venv/
-backend/venv/
-backend/.env
-backend/*.log
-.venv/
-uploads/
+# Java / Maven
+backend/target/
+backend/bin/
+*.class
+*.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# Uploaded files
+backend/uploads/*

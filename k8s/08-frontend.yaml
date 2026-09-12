@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: civicissue-frontend
+  namespace: civicissue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: civicissue-frontend
+  template:
+    metadata:
+      labels:
+        app: civicissue-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <YOUR_IMAGE_FRONTEND>:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: API_PROXY_PASS
+              value: http://backend:8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: civicissue
+spec:
+  selector:
+    app: civicissue-frontend
+  ports:
+    - port: 80
+      targetPort: 80

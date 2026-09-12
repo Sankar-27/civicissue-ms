@@ -1,100 +1,70 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Sun, Moon, LogOut, User, Bell } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/ToastProvider';
-import Auth from './components/Auth';
-import CitizenDashboard from './components/CitizenDashboard';
-import AdminDashboard from './components/AdminDashboard';
-import './index.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import CitizenDashboard from './pages/CitizenDashboard';
+import ReportIssuePage from './pages/ReportIssuePage';
+import IssueDetailPage from './pages/IssueDetailPage';
+import NotificationsPage from './pages/NotificationsPage';
+import AdminDashboard from './pages/AdminDashboard';
+import UserManagement from './pages/UserManagement';
+import DepartmentManagement from './pages/DepartmentManagement';
+import AdminIssueDetailPage from './pages/AdminIssueDetailPage';
+import NotFound from './pages/NotFound';
 
-// Decode JWT payload safely
-function decodeJWT(token) {
-  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+function RootRedirect() {
+  const { isAuthenticated, isAdmin } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />;
 }
 
-function detectRole(token) {
-  const payload = decodeJWT(token);
-  if (!payload) return 'CITIZEN';
-  // Spring Security puts roles in 'authorities' as [{authority:'ROLE_ADMIN'}]
-  const auths = payload.authorities || payload.roles || [];
-  const isAdmin = auths.some(a => {
-    const s = typeof a === 'string' ? a : (a?.authority || '');
-    return s.includes('ADMIN');
-  });
-  return isAdmin ? 'ADMIN' : 'CITIZEN';
-}
-
-export default function App() {
-  const [token, setToken] = useState(() => localStorage.getItem('civic_token'));
-  const [role,  setRole]  = useState(() => {
-    const t = localStorage.getItem('civic_token');
-    return t ? detectRole(t) : null;
-  });
+function ThemeController() {
   const [theme, setTheme] = useState(() => localStorage.getItem('civic_theme') || 'light');
-
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('civic_theme', theme);
   }, [theme]);
+  window.__toggleTheme = () => setTheme(p => (p === 'light' ? 'dark' : 'light'));
+  return null;
+}
 
-  const handleLogin = (t, r) => {
-    localStorage.setItem('civic_token', t);
-    // Always re-detect role from the actual JWT
-    const detectedRole = detectRole(t);
-    setToken(t);
-    setRole(detectedRole);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('civic_token');
-    setToken(null);
-    setRole(null);
-  };
-
-  const toggleTheme = () => setTheme(p => p === 'light' ? 'dark' : 'light');
-
-  const userName = (() => {
-    if (!token) return '';
-    const p = decodeJWT(token);
-    return p?.sub || 'User';
-  })();
-
+export default function App() {
   return (
-    <ToastProvider>
-      {!token ? (
-        <Auth onLogin={handleLogin} />
-      ) : (
-        <div style={{ minHeight: '100vh' }}>
-          {/* ─── Navbar ─── */}
-          <nav className="navbar">
-            <div className="navbar-logo">
-              <span>CivicIssue</span>
-              <span style={{ fontSize:'.7rem', fontWeight:600, padding:'2px 8px',
-                background: role === 'ADMIN' ? 'rgba(99,102,241,.15)' : 'rgba(6,182,212,.12)',
-                color: role === 'ADMIN' ? 'var(--primary)' : 'var(--accent)',
-                borderRadius:'var(--r-full)', marginLeft:4 }}>
-                {role}
-              </span>
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px',
-                background:'var(--surface-2)', borderRadius:'var(--r-full)', border:'1px solid var(--border)',
-                fontSize:'.85rem', fontWeight:600 }}>
-                <User size={14} color="var(--text-muted)"/>
-                <span className="text-muted">{userName}</span>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={toggleTheme} title="Toggle theme">
-                {theme === 'light' ? <Moon size={16}/> : <Sun size={16}/>}
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={handleLogout} title="Log out">
-                <LogOut size={16}/> Sign Out
-              </button>
-            </div>
-          </nav>
+    <BrowserRouter>
+      <ThemeController />
+      <ToastProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          {/* ─── Dashboard ─── */}
-          {role === 'ADMIN' ? <AdminDashboard /> : <CitizenDashboard />}
-        </div>
-      )}
-    </ToastProvider>
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<CitizenDashboard />} />
+                <Route path="/issues/new" element={<ReportIssuePage />} />
+                <Route path="/issues/:id" element={<IssueDetailPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+              <Route element={<Layout />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<UserManagement />} />
+                <Route path="/admin/departments" element={<DepartmentManagement />} />
+                <Route path="/admin/issues/:id" element={<AdminIssueDetailPage />} />
+              </Route>
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
+    </BrowserRouter>
   );
 }

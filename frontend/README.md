@@ -1,16 +1,36 @@
-# React + Vite
+# CivicIssue — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React (Vite) single-page application for the CivicIssue platform.
 
-Currently, two official plugins are available:
+## Layout
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `src/services/api.js` — Axios client. Attaches the JWT from
+  `localStorage['civic_token']` and unwraps the backend `ApiResponse.data`
+  envelope. Set `VITE_API_URL` for a non-relative API base.
+- `src/context/AuthContext.jsx` — auth state (login/logout/current user).
+- `src/components/` — `Navbar`, `Layout`, `ProtectedRoute`, `IssueCard`,
+  `IssueTimeline`, `CommentSection`, `StatusBadge`, `PriorityBadge`,
+  `StatCard`, `MapPicker`, `ToastProvider`.
+- `src/pages/` — `LoginPage`, `RegisterPage`, `CitizenDashboard`,
+  `ReportIssuePage`, `IssueDetailPage`, `NotificationsPage`,
+  `AdminDashboard`, `UserManagement`, `DepartmentManagement`,
+  `AdminIssueDetailPage`, `NotFound`.
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev          # http://localhost:5173, proxies /api + /uploads to :8080
+```
 
-## Expanding the Oxlint configuration
+## Production build
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm run build        # outputs to dist/
+```
+
+The Docker image serves `dist/` from nginx and proxies `/api` and `/uploads`
+to the backend (`http://backend:8080` by default, override `API_PROXY_PASS`).
+
+> `src/index.css` defines the shared design system (tokens, buttons, cards,
+> badges) and should be treated as the source of truth for styling.

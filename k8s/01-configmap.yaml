@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: civicissue-config
+  namespace: civicissue
+data:
+  UPLOAD_DIR: /app/uploads
+  CORS_ORIGINS: "*"
+  SPRING_PROFILES_ACTIVE: docker
